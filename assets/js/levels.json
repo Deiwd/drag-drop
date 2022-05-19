@@ -1,0 +1,6 @@
+[
+    {"orderCorrect": ["circle", "star", "triangle", "square"]},
+    {"orderCorrect": ["rhombus", "trapezoid", "parallelogram", "pentagon"]},
+    {"orderCorrect": ["nonagon", "decagon", "heptagon", "octagon"]},
+    {"orderCorrect": [ "pentagon","decagon", "rhombus", "nonagon", "circle", "star", "triangle", "square"]}
+]
