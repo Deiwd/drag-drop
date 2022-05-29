@@ -1,25 +1,30 @@
-const q = el => document.querySelector(el)
-const qAll = el => document.querySelectorAll(el)
+const q = el => document.querySelector(el);
+const qAll = el => document.querySelectorAll(el);
 
-let aside = q('#aside-main')
-let windowArea = q('.windowArea')
-let bodyArea = q('#body-content')
+let aside = q('#aside-main');
+let windowArea = q('.windowArea');
+let bodyArea = q('#body-content');
 
-let stage = 0
-let errorPoints = 0
-let scoreError = 0
-let scoreValue = 0
+let stage = 0;
+let scoreValue = 0;
+let scoreError = 0;
+let errorPoints = 0;
 
-let hitPoints = 0
-let hitPoints_stars = q('.rating progress').max
 
-let order = {}
+let hitPoints = 0;
+let hitPoints_stars = q('.rating progress').max;
+
+let order = {};
 let orderCorrect;
 
-let numberRandom = []
-let divItem_order = {}
+let numberRandom = [];
+let divItem_order = {};
 
-let animateCanva = false
+let animateCanva = false;
+
+let winSound = new Audio('assets/sound/winSound.ogg');
+let dropSound = new Audio('assets/sound/dropSound.ogg');
+let errorSound = new Audio('assets/sound/errorSound.ogg');
 
 function isTouchDevice(){
     return (
@@ -60,11 +65,13 @@ async function loadLevels(){
             el.addEventListener('dragleave', dragLeave)
             el.addEventListener('drop', drop)
         })
-    } else {
-        qAll('.area').forEach((el)=> {
-            el.addEventListener('click', mobile_drop)
-        })
-    }
+    } /* else {
+        if(itemEl !== undefined){
+            qAll('.area').forEach((el)=> {
+                el.addEventListener('click', drop)
+            })
+        }
+    } */
     
 
     windowArea.querySelector('button.repeat').addEventListener('click', restartGame)
@@ -74,7 +81,7 @@ async function loadLevels(){
 loadLevels()
 
 
-function divItem_random(){
+async function divItem_random(){
     aside.querySelector('.dragArea').innerHTML = ''
     
     for(let i in divItem_order){
@@ -102,21 +109,18 @@ function divItem_random(){
         })
     } else {
         qAll('.item').forEach((el)=>{
-            el.addEventListener('click', mobile_start)
+            el.addEventListener('touchstart', mobile_start)
         })
     }
 
     verifyColumn()
-
-    let paddingArea = 20
     
-    aside.style.width = `calc(${q('.dragArea').offsetWidth}px + ${paddingArea}px)`
+    aside.style.width = `${(q('.dragArea').offsetWidth + 20)}px`;
     
     //DEBUGGING LOADING IN ITEM
-    if(Object.keys(divItem_order).length < orderCorrect.length){
-
+    if(Object.keys(divItem_order).length < orderCorrect.length || 
+    aside.querySelector('.dragArea').childElementCount < orderCorrect.length){
         restartGame()
-        //window.location.reload(true)
     }
 }
 
@@ -124,32 +128,72 @@ function divItem_random(){
 setTimeout(divItem_random, 300)
 
 
+if(isTouch){
+
+    q('.fullscreen').classList.add('show');
+    windowArea.appendChild(q('footer#footer'));
+
+    windowArea.querySelector('.content-windowArea').classList.add('stop-colorChange');
+    windowArea.querySelector('.title--windowArea').classList.add('stop-colorChange');
+}
+
+q('.fullscreen > button').addEventListener('touchstart', toggleFullScreen)
+
+window.addEventListener('webkitfullscreenchange', fullScreen_TouchDevice)
+
+function toggleFullScreen() {
+    let doc = document.documentElement;
+
+    if((document.fullScreenElement && document.fullScreenElement !== null) || 
+       (!document.mozFullScreen && !document.webkitIsFullScreen)){
+            
+
+            if(doc.requestFullScreen){
+                doc.requestFullScreen();
+            } else if(doc.mozRequestFullScreen){
+                doc.mozRequestFullScreen();
+            } else if(doc.webkitRequestFullScreen){
+                doc.webkitRequestFullScreen();
+            }
+        }
+}
+
+function fullScreen_TouchDevice(){
+    if(q('.fullscreen').classList.contains('show')){
+        q('.fullscreen.show').classList.remove('show')
+    } else {
+        q('.fullscreen').classList.add('show')
+    }
+}
+
+
 let itemEl;
 
 function mobile_start(e){
-    itemEl = e.currentTarget;
 
-    qAll('.dragArea .item').forEach(el=> {
-        if(el.classList.contains('selected')) el.classList.remove('selected');
-    });
-    
-    itemEl.classList.add('selected');
-}
-function mobile_drop(){
-    console.log('soltou');
-}
+    if(e.currentTarget.closest('.dragArea')){
+        itemEl = e.currentTarget;
 
+        qAll('.dragArea .item').forEach(el=> {
+            if(el.classList.contains('selected')) el.classList.remove('selected');
+        });
+        
+        itemEl.classList.add('selected');
 
-if(window.innerWidth <= 640){
+        if(itemEl !== undefined){
+            qAll('.area').forEach((el)=> {
+                el.addEventListener('click', drop)
+            })
+        }
+    }
 
-    q('body').appendChild(q('footer#footer'))
 }
 
 function dragStart(e){
 
     e.currentTarget.style.opacity = '.5'
     itemEl = e.currentTarget
-    itemEl_att = itemEl.getAttribute('data-name')
+    /* itemEl_att = itemEl.getAttribute('data-name') */
 }
 
 function dragEnd(e){
@@ -173,9 +217,11 @@ function dragLeave(e){
 function drop(e){
     e.currentTarget.classList.remove('over')
 
-    let 
-    itemEl_att = itemEl.getAttribute('data-name'),
-    areaEl_att = e.currentTarget.getAttribute('data-name')
+    let itemEl_att, areaEl_att
+
+    itemEl_att = itemEl.getAttribute('data-name');
+    areaEl_att = e.currentTarget.getAttribute('data-name');
+    
 
     if(e.currentTarget.querySelector('.item') == null && itemEl_att == areaEl_att)
     {
@@ -183,15 +229,25 @@ function drop(e){
 
         order[areaEl_att] = itemEl_att
 
-        new Audio('dropSound.mp3').play()
+        dropSound.play()
 
         hitPoints = hitPoints + 5
+
+        if(isTouch){
+            itemEl.classList.remove('selected')
+            itemEl = '';
+        }
         
     } else {
-        new Audio('errorSound.mp3').play()
+        if(e.currentTarget.querySelector('.item') == null){
 
-        errorPoints++
-        scoreError += 5
+            errorSound.play()
+
+            errorPoints++
+            scoreError += 5
+
+        }
+        
     }
 
     verify_hitPoints()
@@ -207,7 +263,7 @@ function drop(e){
     bodyArea.querySelector('.scoreView').innerHTML = scoreValue
 
     if(windowArea.classList.contains('open')){
-        aside.style.width = '0px'
+        aside.style.width = '0px';
 
         let starPoints;
 
@@ -235,7 +291,6 @@ function drop(e){
         }
 
         
-        console.log(scoreValue)
         windowArea.querySelector('progress').value = starPoints
         windowArea.querySelector('.score .box').innerHTML = scoreValue
     }
@@ -247,18 +302,21 @@ function verify_hitPoints(){
     })
 
     if(checking){
-        new Audio('winSound.mp3').play()
+        winSound.play()
 
+        qAll('#body-content, #aside-main').forEach(el => el.classList.add('blur'))
 
-        bodyArea.classList.add('blur')
+        windowArea.querySelector('.content-windowArea').classList.add('window-win');
+        windowArea.querySelector('.title--windowArea').classList.add('window-win');
+        windowArea.querySelector('.title--windowArea').innerHTML = 'Congratulations';
 
-        animateCanva = true
+        if(!isTouch){
+            animateCanva = true
 
-        windowArea.querySelector('.title--windowArea').innerHTML = 'Congratulations'
-
-        setTimeout(()=> {
-            q('#confetti-js').classList.add('show')
-        }, 1)
+            setTimeout(()=> {
+                q('#confetti-js').classList.add('show')
+            }, 1)
+        }
 
         windowArea.classList.add('open')
 
@@ -275,10 +333,11 @@ function verify_hitPoints(){
 function restartGame(){
     for(let i in order){ order[i] = null }
 
-    bodyArea.classList.remove('blur')
+    numberRandom = [];
+    divItem_order = {};
 
-    numberRandom = []
-    divItem_order = {}
+    qAll('#body-content, #aside-main').forEach(el => el.classList.remove('blur'))
+
 
     for(let i in orderCorrect){
         numberRandom.push( Math.floor(Math.random() * 100) )
@@ -299,6 +358,13 @@ function restartGame(){
     if(q('#confetti-js').classList.contains('show')){
         q('#confetti-js.show').classList.remove('show')
     }
+    if(windowArea.querySelector('.content-windowArea').classList.contains('window-win')){
+        windowArea.querySelector('.content-windowArea').classList.remove('window-win');
+        windowArea.querySelector('.title--windowArea').classList.remove('window-win');
+    } else if(windowArea.querySelector('.content-windowArea').classList.contains('window-los')){
+        windowArea.querySelector('.content-windowArea').classList.remove('window-los');
+        windowArea.querySelector('.title--windowArea').classList.remove('window-los');
+    }
 
     hitPoints = 0
     scoreValue = 0 
@@ -317,7 +383,7 @@ function nextGame(){
         bodyArea.querySelector('.dropArea').innerHTML = ''
 
         loadLevels()
-        setTimeout(()=> restartGame(), 100)
+        setTimeout(()=> restartGame(), 500)
     } 
 }
 
@@ -332,8 +398,10 @@ function verifyColumn(){
 function verify_errorPoints(){
     if(errorPoints > 4){
 
-        bodyArea.classList.add('blur')
+        qAll('#body-content, #aside-main').forEach(el => el.classList.add('blur'))
 
+        windowArea.querySelector('.content-windowArea').classList.add('window-los');
+        windowArea.querySelector('.title--windowArea').classList.add('window-los');
         windowArea.querySelector('.title--windowArea').innerHTML = 'Gameover'
 
         windowArea.classList.add('open')
