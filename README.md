@@ -4,9 +4,13 @@
 <br>
 <img src="assets/img/preview.gif?raw=true" width="800px" height="auto" align="center" />
 <br>
+
 ## Modification
+
 ### levels.json
+
 Each object represents a level with 4 blocks, 8 maximum. Can change position
+
 ```
 [
     {"orderCorrect": ["circle", "star", "triangle", "square"]},
