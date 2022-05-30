@@ -7,11 +7,11 @@
 
 ## Modification
 
-### levels.json
-
 Each object represents a level with 4 blocks, 8 maximum. Can change position
 
-```
+### levels.json
+
+```swift
 [
     {"orderCorrect": ["circle", "star", "triangle", "square"]},
     {"orderCorrect": ["rhombus", "trapezoid", "parallelogram", "pentagon"]},
